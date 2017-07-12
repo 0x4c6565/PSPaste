@@ -2,58 +2,91 @@
 
 function Get-Paste
 {
+    [CmdletBinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)][string]$UUID
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)][string[]]$UUID
     )
 
-    try
+    Begin
     {
-        $ResponseData = Invoke-Request -Resource "/v1/paste/$UUID" -Method Get
-    }
-    catch
-    {
-        throw "Failed to retrieve paste; InnerException=[$($_.Exception.Message)]"
+        $Results = @()
     }
 
-    return New-Object -TypeName PSObject -Property `
-    @{
-        UUID = $UUID
-        Content = $ResponseData.content
-        Syntax = (Get-Syntax | ? {$_.Syntax -eq $ResponseData.syntax})
-        Expires = (Get-Expires | ? {$_.expires -eq $ResponseData.expires})
+    Process
+    {
+        foreach ($CurrentUUID in $UUID)
+        {
+            try
+            {
+                $ResponseData = Invoke-Request -Resource "/v1/paste/$CurrentUUID" -Method Get
+            }
+            catch
+            {
+                throw "Failed to retrieve paste; UUID=[$CurrentUUID] InnerException=[$($_.Exception.Message)]"
+            }
+            $Results += New-Object -TypeName PSObject -Property `
+            @{
+                UUID = $CurrentUUID
+                Content = $ResponseData.content
+                Syntax = (Get-Syntax | ? {$_.Syntax -eq $ResponseData.syntax})
+                Expires = (Get-Expires | ? {$_.expires -eq $ResponseData.expires})
+            }
+        }
+    }
+
+    End
+    {
+        return $Results
     }
 }
 
 function New-Paste
 {
+    [CmdletBinding()]
     Param
     (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)][string]$Content,
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)][string[]]$Content,
         [Parameter(Mandatory=$false)][string]$Syntax,
         [Parameter(Mandatory=$false)][string]$Expires
     )
 
-    $Body = New-Object -TypeName PSObject -Property `
-    @{
-        content = $Content
-        syntax = $Syntax
-        expires = $Expires
-    }
-    
-    try
+    Begin
     {
-        $ResponseData = Invoke-Request -Resource "/v1/paste" -Method Post -Body $Body
-    }
-    catch
-    {
-        throw "Failed to create paste; InnerException=[$($_.Exception.Message)]"
+        $Results = @()
     }
 
-    return New-Object -TypeName PSObject -Property `
-    @{
-        UUID = $ResponseData.uuid
-        URL = "$URL/$($ResponseData.uuid)"
+    Process
+    {
+        foreach ($CurrentContent in $Content)
+        {
+            $Body = New-Object -TypeName PSObject -Property `
+            @{
+                content = $CurrentContent
+                syntax = $Syntax
+                expires = $Expires
+            }
+    
+            try
+            {
+                $ResponseData = Invoke-Request -Resource "/v1/paste" -Method Post -Body $Body
+            }
+            catch
+            {
+                throw "Failed to create paste; InnerException=[$($_.Exception.Message)]"
+            }
+
+            $Results += New-Object -TypeName PSObject -Property `
+            @{
+                UUID = $ResponseData.uuid
+                URL = "$URL/$($ResponseData.uuid)"
+            }
+        }
+    }
+
+    End
+    {
+        return $Results
     }
 }
 
