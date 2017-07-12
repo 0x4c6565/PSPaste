@@ -119,7 +119,7 @@ function Invoke-Request
     $Result = Invoke-WebRequest -Uri "$URL/api/$($Resource.Trim('/'))" -Method $Method -Body ($Body | ConvertTo-Json) -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json
     if ($Result.success -ne $true)
     {
-        throw "Request failed; InnerException=[$($_.Exception.Message)]"
+        throw $Result.data
     }
 
     return $Result.data
