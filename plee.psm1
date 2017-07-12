@@ -6,7 +6,7 @@ function Get-Paste
     (
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)][string]$UUID
     )
-        $uuid = "a4fff48f-f11d-436f-9868-820fd1c1800a"
+
     try
     {
         $ResponseData = Invoke-Request -Resource "/v1/paste/$UUID" -Method Get
